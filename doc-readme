@@ -1,0 +1,3 @@
+The Makefile is configured to cause the bundled index.html file to be placed under the dist/ folder.
+The Makefile also copies that file to the doc/ folder, to make it easier for GitHub pages to publish it.
+
