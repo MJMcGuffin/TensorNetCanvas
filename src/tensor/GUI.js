@@ -27,6 +27,14 @@ const FONT_SCALE = 0.75; // font size relative to CHAR_HEIGHT
 const MERGED_INDEX_NAME_DELIMITER = ','; // delimiter used when joining/splitting atomic sub-names within an index name
 const INDEX_NAME_SEPARATOR = '; '; // separator used between index names in the hover tooltip
 
+const DEFAULT_NODE_BG_OPACITY = 0.8;
+
+const USER_SEL_BORDER_COLOR  = '#ffffff';
+const SYS_SEL_BORDER_COLOR   = '#ffee00';
+const LASSO_SELECT_COLOR     = '#ffffff';
+const SEL_BORDER_LINE_WIDTH = 3.5;
+const SEL_GLOW_OFFSET       = 3; // px outset for the outer highlight rect
+
 const RECT_LASSO_THRESHOLD = 2.0;
 
 const NARY_CONTRACTION_WARNING_THRESHOLD = 5; // nodes; triggers a one-time confirmation dialog
@@ -94,6 +102,7 @@ export class TensorNetGUI {
         // Spline options
         this.tangentLength = 3.0;
         this.curvature = 0;
+        this.nodeBgOpacity = DEFAULT_NODE_BG_OPACITY;
 
         // Cumulative cost
         this.cumulativeCost = 0;
@@ -293,7 +302,7 @@ export class TensorNetGUI {
 
         // Lasso / rect select
         if ((this.mode === MODE_LASSO_SELECT || this.mode === MODE_RECT_SELECT) && this.lassoPointsW.length > 1) {
-            ctx.strokeStyle = '#ff0';
+            ctx.strokeStyle = LASSO_SELECT_COLOR;
             ctx.lineWidth = 1;
             ctx.setLineDash([4, 4]);
             ctx.beginPath();
@@ -438,9 +447,9 @@ export class TensorNetGUI {
         let sw = this.w2sLen(b.w), sh = this.w2sLen(g.textH + NODE_PADDING);
 
         // Text bounding rect
-        ctx.fillStyle  = userSel ? '#0a2a0a' : (sysSel ? '#0a1a2a' : '#0a0a0a');
-        ctx.strokeStyle = userSel ? '#0f0'   : (sysSel ? '#00ccff' : '#0a0');
-        ctx.lineWidth  = sel ? 2.5 : 1;
+        ctx.fillStyle  = `rgba(10,10,10,${this.nodeBgOpacity})`;
+        ctx.strokeStyle = userSel ? USER_SEL_BORDER_COLOR : (sysSel ? SYS_SEL_BORDER_COLOR : '#0a0');
+        ctx.lineWidth  = sel ? SEL_BORDER_LINE_WIDTH : 1;
         ctx.fillRect(sx, sy, sw, sh);
         ctx.strokeRect(sx, sy, sw, sh);
 
@@ -590,18 +599,13 @@ export class TensorNetGUI {
             }
         }
 
-        // Selection highlight glow
-        if (userSel) {
-            ctx.strokeStyle = 'rgba(0,255,0,0.3)';
-            ctx.lineWidth = 4;
-            ctx.strokeRect(this.w2sx(b.left) - 2, this.w2sy(b.top) - 2,
-                this.w2sLen(b.w) + 4, this.w2sLen(b.h) + 4);
-        }
-        if (sysSel) {
-            ctx.strokeStyle = 'rgba(0,200,255,0.5)';
-            ctx.lineWidth = 4;
-            ctx.strokeRect(this.w2sx(b.left) - 2, this.w2sy(b.top) - 2,
-                this.w2sLen(b.w) + 4, this.w2sLen(b.h) + 4);
+        // Selection highlight outer border
+        if (sel) {
+            ctx.strokeStyle = userSel ? USER_SEL_BORDER_COLOR : SYS_SEL_BORDER_COLOR;
+            ctx.lineWidth = SEL_BORDER_LINE_WIDTH;
+            const o = SEL_GLOW_OFFSET;
+            ctx.strokeRect(this.w2sx(b.left) - o, this.w2sy(b.top) - o,
+                this.w2sLen(b.w) + 2*o, this.w2sLen(b.h) + 2*o);
         }
     }
 
@@ -1051,6 +1055,14 @@ export class TensorNetGUI {
         let chkSuppressZeros = document.getElementById('chkSuppressZeros');
         chkSuppressZeros.addEventListener('change', () => { this.suppressZeros = chkSuppressZeros.checked; this.render(); });
 
+        let nodeBgOpacitySlider = document.getElementById('nodeBgOpacitySlider');
+        nodeBgOpacitySlider.value = DEFAULT_NODE_BG_OPACITY;
+        document.getElementById('nodeBgOpacityVal').textContent = DEFAULT_NODE_BG_OPACITY.toFixed(2);
+        nodeBgOpacitySlider.addEventListener('input', () => {
+            this.nodeBgOpacity = parseFloat(nodeBgOpacitySlider.value);
+            document.getElementById('nodeBgOpacityVal').textContent = this.nodeBgOpacity.toFixed(2);
+            this.render();
+        });
 
         let tSlider = document.getElementById('tangentLenSlider');
         tSlider.addEventListener('input', () => {
@@ -1278,10 +1290,10 @@ export class TensorNetGUI {
         convertCircuitToTensorNet(circuit, tensorNet);
 
         // Assign positions to newly added nodes, laying them out in a grid
-        const xSpacing = 10, ySpacing = 7;
+        const xSpacing = 12, ySpacing = 10;
         for (let [id, node] of tensorNet.nodes) {
             if (existingNodeIds.has(id)) continue;
-            node.x *= xSpacing;
+            node.x = ( node.x + /*stagger*/ 0.8*(node.y-1)/circuit.numWires ) * xSpacing;
             node.y *= ySpacing;
             node.areCoordinatesInitialized = true;
         }

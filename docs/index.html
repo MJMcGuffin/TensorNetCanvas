@@ -5424,6 +5424,12 @@ const NODE_PADDING = 0.3;
 const CHAR_HEIGHT = 1;
 const FONT_SCALE = 0.75;
 const MERGED_INDEX_NAME_DELIMITER = ",";
+const DEFAULT_NODE_BG_OPACITY = 0.8;
+const USER_SEL_BORDER_COLOR = "#ffffff";
+const SYS_SEL_BORDER_COLOR = "#ffee00";
+const LASSO_SELECT_COLOR = "#ffffff";
+const SEL_BORDER_LINE_WIDTH = 3.5;
+const SEL_GLOW_OFFSET = 3;
 const RECT_LASSO_THRESHOLD = 2;
 const NARY_CONTRACTION_WARNING_THRESHOLD = 5;
 const MODE_NONE = "none";
@@ -5467,6 +5473,7 @@ const _TensorNetGUI = class _TensorNetGUI {
     this.suppressZeros = false;
     this.tangentLength = 3;
     this.curvature = 0;
+    this.nodeBgOpacity = DEFAULT_NODE_BG_OPACITY;
     this.cumulativeCost = 0;
     this._largeContractionConfirmed = false;
     this.geomCache = /* @__PURE__ */ new Map();
@@ -5638,7 +5645,7 @@ const _TensorNetGUI = class _TensorNetGUI {
         this._drawEdge(edge, true);
     }
     if ((this.mode === MODE_LASSO_SELECT || this.mode === MODE_RECT_SELECT) && this.lassoPointsW.length > 1) {
-      ctx.strokeStyle = "#ff0";
+      ctx.strokeStyle = LASSO_SELECT_COLOR;
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -5759,9 +5766,9 @@ const _TensorNetGUI = class _TensorNetGUI {
     );
     let sx = this.w2sx(b.left), sy = this.w2sy(b.top);
     let sw = this.w2sLen(b.w), sh = this.w2sLen(g.textH + NODE_PADDING);
-    ctx.fillStyle = userSel ? "#0a2a0a" : sysSel ? "#0a1a2a" : "#0a0a0a";
-    ctx.strokeStyle = userSel ? "#0f0" : sysSel ? "#00ccff" : "#0a0";
-    ctx.lineWidth = sel ? 2.5 : 1;
+    ctx.fillStyle = `rgba(10,10,10,${this.nodeBgOpacity})`;
+    ctx.strokeStyle = userSel ? USER_SEL_BORDER_COLOR : sysSel ? SYS_SEL_BORDER_COLOR : "#0a0";
+    ctx.lineWidth = sel ? SEL_BORDER_LINE_WIDTH : 1;
     ctx.fillRect(sx, sy, sw, sh);
     ctx.strokeRect(sx, sy, sw, sh);
     let fontSize = this.w2sLen(CHAR_HEIGHT * FONT_SCALE);
@@ -5886,24 +5893,15 @@ const _TensorNetGUI = class _TensorNetGUI {
         ctx.textBaseline = "top";
       }
     }
-    if (userSel) {
-      ctx.strokeStyle = "rgba(0,255,0,0.3)";
-      ctx.lineWidth = 4;
+    if (sel) {
+      ctx.strokeStyle = userSel ? USER_SEL_BORDER_COLOR : SYS_SEL_BORDER_COLOR;
+      ctx.lineWidth = SEL_BORDER_LINE_WIDTH;
+      const o = SEL_GLOW_OFFSET;
       ctx.strokeRect(
-        this.w2sx(b.left) - 2,
-        this.w2sy(b.top) - 2,
-        this.w2sLen(b.w) + 4,
-        this.w2sLen(b.h) + 4
-      );
-    }
-    if (sysSel) {
-      ctx.strokeStyle = "rgba(0,200,255,0.5)";
-      ctx.lineWidth = 4;
-      ctx.strokeRect(
-        this.w2sx(b.left) - 2,
-        this.w2sy(b.top) - 2,
-        this.w2sLen(b.w) + 4,
-        this.w2sLen(b.h) + 4
+        this.w2sx(b.left) - o,
+        this.w2sy(b.top) - o,
+        this.w2sLen(b.w) + 2 * o,
+        this.w2sLen(b.h) + 2 * o
       );
     }
   }
@@ -6320,6 +6318,14 @@ const _TensorNetGUI = class _TensorNetGUI {
       this.suppressZeros = chkSuppressZeros.checked;
       this.render();
     });
+    let nodeBgOpacitySlider = document.getElementById("nodeBgOpacitySlider");
+    nodeBgOpacitySlider.value = DEFAULT_NODE_BG_OPACITY;
+    document.getElementById("nodeBgOpacityVal").textContent = DEFAULT_NODE_BG_OPACITY.toFixed(2);
+    nodeBgOpacitySlider.addEventListener("input", () => {
+      this.nodeBgOpacity = parseFloat(nodeBgOpacitySlider.value);
+      document.getElementById("nodeBgOpacityVal").textContent = this.nodeBgOpacity.toFixed(2);
+      this.render();
+    });
     let tSlider = document.getElementById("tangentLenSlider");
     tSlider.addEventListener("input", () => {
       this.tangentLength = parseFloat(tSlider.value);
@@ -6536,10 +6542,11 @@ const _TensorNetGUI = class _TensorNetGUI {
     }
     const existingNodeIds = new Set(tensorNet.nodes.keys());
     convertCircuitToTensorNet(circuit, tensorNet);
-    const xSpacing = 10, ySpacing = 7;
+    const xSpacing = 12, ySpacing = 10;
     for (let [id, node] of tensorNet.nodes) {
       if (existingNodeIds.has(id)) continue;
-      node.x *= xSpacing;
+      node.x = (node.x + /*stagger*/
+      0.8 * (node.y - 1) / circuit.numWires) * xSpacing;
       node.y *= ySpacing;
       node.areCoordinatesInitialized = true;
     }
@@ -6919,7 +6926,10 @@ if (typeof CTensor !== "undefined") window.CTensor = CTensor;</script>
 
 <div id="app-container">
   <div id="panel">
-    <div style="color:#0f0;font-size:16px;font-weight:bold;padding:6px 0 10px 0;border-bottom:1px solid #0f0;margin-bottom:12px;">TensorNetCanvas</div>
+    <div style="color:#0f0;font-size:16px;font-weight:bold;padding:6px 0 4px 0;">TensorNetCanvas</div>
+    <a href="https://github.com/MJMcGuffin/TensorNetCanvas">[source code]</a>
+    <div style="border-bottom:1px solid #0f0;margin-bottom:12px;padding-top:6px;"></div>
+
 
     <!-- Creation -->
     <div class="panel-section">
@@ -6961,7 +6971,7 @@ if (typeof CTensor !== "undefined") window.CTensor = CTensor;</script>
           <button id="btnSbsStop" disabled
             title="Exit step-by-step mode, clear the system selection, and unlock the UI.">Stop</button>
           <div id="sbsStatus" style="color:#0a0;font-size:11px;margin:4px 0;">🔓UI is unlocked</div>
-          <div id="sbsStepList"></div>
+          <div id="sbsStepList" style="border:1px solid #333;padding:4px 6px;margin:4px 0;"></div>
           <label style="margin-top:6px;">Policy:</label>
           <select id="sbsPolicy"
             title="Contraction ordering policy: which pair of nodes is selected each cycle.">
@@ -7009,6 +7019,9 @@ if (typeof CTensor !== "undefined") window.CTensor = CTensor;</script>
         title="Toggle display of the node ID label above each tensor node."/> Show Node IDs</label>
       <label style="margin-top:6px;"><input type="checkbox" id="chkSuppressZeros"
         title="Replace zero values with underscores in tensor display."/> Replace zeros with underscores</label>
+      <label style="margin-top:6px;">Node background opacity: <span id="nodeBgOpacityVal"></span></label>
+      <input type="range" id="nodeBgOpacitySlider" min="0" max="1" step="0.01"
+        title="Controls the opacity of the node background rectangle."/>
       <label style="margin-top:6px;">Tangent length: <span id="tangentLenVal">3.0</span></label>
       <input type="range" id="tangentLenSlider" min="0.5" max="10" step="0.1" value="3.0"
         title="Controls the length of the tangent handles that shape edge spline curves."/>
