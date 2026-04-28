@@ -32,8 +32,10 @@ const DEFAULT_NODE_BG_OPACITY = 0.8;
 const USER_SEL_BORDER_COLOR  = '#ffffff';
 const SYS_SEL_BORDER_COLOR   = '#ffee00';
 const LASSO_SELECT_COLOR     = '#ffffff';
+const EDGE_DRAG_COLOR        = '#ff8000';
 const SEL_BORDER_LINE_WIDTH = 3.5;
 const SEL_GLOW_OFFSET       = 3; // px outset for the outer highlight rect
+const SEL_GLOW_EXTRA_OFFSET = 6; // additional px outset for the second ring when both sel sets apply
 
 const RECT_LASSO_THRESHOLD = 2.0;
 
@@ -278,7 +280,7 @@ export class TensorNetGUI {
         if (this.mode === MODE_CREATE_EDGE && this.edgeSrcNode) {
             let sc = this.getIdxSquareCenter(this.edgeSrcNode, this.edgeSrcIdx);
             let yOff = INDEX_SQUARE_SIZE * 0.7;
-            ctx.strokeStyle = '#ff0';
+            ctx.strokeStyle = EDGE_DRAG_COLOR;
             ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]);
             this._strokeBezierEdge(
@@ -599,13 +601,24 @@ export class TensorNetGUI {
             }
         }
 
-        // Selection highlight outer border
+        // Selection highlight outer border(s)
         if (sel) {
-            ctx.strokeStyle = userSel ? USER_SEL_BORDER_COLOR : SYS_SEL_BORDER_COLOR;
             ctx.lineWidth = SEL_BORDER_LINE_WIDTH;
-            const o = SEL_GLOW_OFFSET;
-            ctx.strokeRect(this.w2sx(b.left) - o, this.w2sy(b.top) - o,
-                this.w2sLen(b.w) + 2*o, this.w2sLen(b.h) + 2*o);
+            const o1 = SEL_GLOW_OFFSET;
+            const o2 = SEL_GLOW_OFFSET + SEL_GLOW_EXTRA_OFFSET;
+            // When both sets apply, draw user-sel at the inner offset and sys-sel at the outer offset
+            // so both rings are visible simultaneously.
+            if (userSel) {
+                ctx.strokeStyle = USER_SEL_BORDER_COLOR;
+                ctx.strokeRect(this.w2sx(b.left) - o1, this.w2sy(b.top) - o1,
+                    this.w2sLen(b.w) + 2*o1, this.w2sLen(b.h) + 2*o1);
+            }
+            if (sysSel) {
+                const o = userSel ? o2 : o1;
+                ctx.strokeStyle = SYS_SEL_BORDER_COLOR;
+                ctx.strokeRect(this.w2sx(b.left) - o, this.w2sy(b.top) - o,
+                    this.w2sLen(b.w) + 2*o, this.w2sLen(b.h) + 2*o);
+            }
         }
     }
 
