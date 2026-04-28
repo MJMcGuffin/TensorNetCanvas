@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TensorNetCanvas</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; color: #0f0; font-family: 'Courier New', monospace; font-size: 13px; }
+  #app-container { display: flex; width: 100%; height: 100%; }
+  #panel { width: 320px; min-width: 200px; overflow-y: auto; padding: 10px; background: #111; border-right: 1px solid #0f0; }
+  #resize-handle { width: 6px; cursor: col-resize; background: #333; flex-shrink: 0; }
+  #resize-handle:hover { background: #0f0; }
+  #canvas-container { flex: 1; position: relative; overflow: hidden; }
+  #tnCanvas { display: block; }
+  #tooltip { position: fixed; background: #222; color: #0f0; border: 1px solid #0f0; padding: 4px 8px; font-size: 12px; pointer-events: none; z-index: 1000; white-space: pre-line; }
+  .panel-section { margin-bottom: 12px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+  .panel-section h3 { color: #0f0; font-size: 13px; margin-bottom: 6px; }
+  .panel-section label { display: block; color: #0a0; font-size: 11px; margin-bottom: 2px; }
+  textarea, input[type="text"] { width: 100%; background: #000; color: #0f0; border: 1px solid #0a0; font-family: 'Courier New', monospace; font-size: 12px; padding: 4px; resize: vertical; }
+  textarea:focus, input[type="text"]:focus { outline: none; border-color: #0f0; }
+  button { background: #1a1a1a; color: #0f0; border: 1px solid #0a0; padding: 4px 10px; cursor: pointer; font-family: 'Courier New', monospace; font-size: 12px; margin: 2px 0; }
+  button:hover:not(:disabled) { background: #0a0; color: #000; }
+  button:disabled { color: #555; border-color: #333; cursor: default; }
+  button.btn-danger { color: #f80; border-color: #a40; }
+  button.btn-danger:hover:not(:disabled) { background: #a40; color: #000; }
+  button.btn-danger:disabled { color: #555; border-color: #333; }
+  .cost-display { color: #0ff; font-size: 12px; margin: 4px 0; }
+  .controls-help { color: #0a0; font-size: 11px; line-height: 1.6; }
+  .controls-help b { color: #0f0; }
+  input[type="range"] { width: 100%; accent-color: #0f0; }
+  select { background: #000; color: #0f0; border: 1px solid #0a0; font-family: 'Courier New', monospace; font-size: 12px; padding: 2px; width: 100%; }
+  a, a:visited { color: #0f0; }
+  a:hover { background-color: #0f0; color: #000; }
+  details.subsection { margin: 6px 0; }
+  details.subsection > summary { color: #0a0; font-size: 11px; cursor: pointer; user-select: none; padding: 2px 0; list-style: none; }
+  details.subsection > summary::before { content: '▶ '; font-size: 9px; }
+  details.subsection[open] > summary::before { content: '▼ '; }
+  details.subsection > summary:hover { color: #0f0; }
+  details.subsection .subsection-body { padding: 6px 0 2px 8px; border-left: 1px solid #333; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<div id="app-container">
+  <div id="panel">
+    <div style="color:#0f0;font-size:16px;font-weight:bold;padding:6px 0 10px 0;border-bottom:1px solid #0f0;margin-bottom:12px;">TensorNetCanvas</div>
+
+    <!-- Creation -->
+    <div class="panel-section">
+      <h3>Creation</h3>
+      <label>Tensor definition(s) - nested arrays such as<br/> [[0,1],[1,0]] or (nested array,'node name','index0',...) tuples
+          such as <br/>([[0,-i],[i,0]],'Y') or<br/>([[1,0],[0,-1]],'Z','out','in')</label>
+      <textarea id="createTensorInput" rows="3"
+        placeholder="e.g. [[1,0],[0,-1]];&#10;([[1,0],[0,i]],'S','out','in')"
+        spellcheck="false"
+        title="Enter one or more tensor definitions separated by semicolons. Each can be a nested array (e.g. [[1,0],[0,1]]) or a tuple of (array, name, index labels)."></textarea>
+      <button id="btnCreateTensor" disabled
+        title="Create tensor node(s) from the definition(s) above and add them to the canvas.">Create Tensor(s)</button>
+      <label style="margin-top:8px;">Import circuit from <a href="https://mjmcguffin.github.io/MuqcsCraft/">MuqcsCraft</a> or <a href="https://algassert.com/quirk">Quirk</a> URL:</label>
+      <textarea id="importCircuitURL" rows="3"
+        placeholder="https://..."
+        spellcheck="false"
+        title="Paste a URL from MuqcsCraft or Quirk to import the circuit as a tensor network."></textarea>
+      <button id="btnImportCircuit"
+        title="Parse the circuit URL above and build the corresponding tensor network on the canvas.">Import circuit</button>
+    </div>
+
+    <!-- Contraction -->
+    <div class="panel-section">
+      <h3>Contraction</h3>
+      <button id="btnContract" disabled
+        title="Contracts self-edges on single nodes, and combines pairs of nodes with tensor product + contraction. Shortcut: C"><u>C</u>ontract selected</button>
+      <div class="cost-display" id="costDisplay">Cost of selected:</div>
+      <span class="cost-display" id="cumulativeCostDisplay">Cumulative cost: 0</span>
+      <button id="btnClearCost"
+        title="Reset the cumulative contraction cost counter to zero.">Clear</button>
+      <br/>
+      <details class="subsection" style="margin-top:8px;">
+        <summary>Step-by-step</summary>
+        <div class="subsection-body">
+          <button id="btnSbsStart"
+            title="Enter step-by-step mode: locks the UI and resets the procedure to its first step.">Start</button>
+          <button id="btnSbsNext" disabled
+            title="Execute the next step in the procedure and advance to the following step.">Next Step</button>
+          <button id="btnSbsStop" disabled
+            title="Exit step-by-step mode, clear the system selection, and unlock the UI.">Stop</button>
+          <div id="sbsStatus" style="color:#0a0;font-size:11px;margin:4px 0;">🔓UI is unlocked</div>
+          <div id="sbsStepList"></div>
+          <label style="margin-top:6px;">Policy:</label>
+          <select id="sbsPolicy"
+            title="Contraction ordering policy: which pair of nodes is selected each cycle.">
+            <option value="0">Minimum cost first</option>
+            <option value="1">Maximum cost first</option>
+            <option value="2">Random</option>
+          </select>
+        </div>
+      </details>
+    </div>
+    <!-- Operations -->
+    <div class="panel-section">
+      <h3>Other Operations</h3>
+      <button id="btnCopySelected" disabled
+        title="Copy the currently selected nodes and the edges between them.">Copy selected</button>
+      <br/>
+      <details class="subsection" style="margin-top:8px;">
+        <summary>Advanced</summary>
+        <div class="subsection-body">
+          <label>Permutation array (for transpose):</label>
+          <input type="text" id="transposeInput" placeholder="e.g. [1,0]"
+            title="Enter a permutation array specifying the new axis order, e.g. [1,0] to swap two axes."/>
+          <button id="btnTranspose" disabled
+            title="Permute the axes of the selected tensor according to the permutation array above.">Transpose</button>
+          <label style="margin-top:6px;">New shape array (for reshape):</label>
+          <input type="text" id="reshapeInput" placeholder="e.g. [2,4]"
+            title="Enter the target shape as an array. The total number of elements must be preserved, e.g. [2,4] for an 8-element tensor."/>
+          <button id="btnReshape" disabled
+            title="Reshape the selected tensor to the new shape specified above.">Reshape</button>
+        </div>
+      </details>
+
+      <button id="btnDeleteSelected" disabled class="btn-danger" style="margin-top:8px;"
+        title="Delete all currently selected nodes and their connected edges. Shortcut: Delete or Backspace">Delete selected</button>
+      <button id="btnDeleteAll" class="btn-danger"
+        title="Delete every node and edge from the canvas. Use browser Back to undo.">Delete all</button>
+    </div>
+
+    <!-- View -->
+    <div class="panel-section">
+      <h3>View</h3>
+      <button id="btnFrameAll"
+        title="Pan and zoom the canvas so all nodes are visible. Shortcut: F"><u>F</u>rame all</button>
+      <label style="margin-top:6px;"><input type="checkbox" id="chkShowNodeIDs"
+        title="Toggle display of the node ID label above each tensor node."/> Show Node IDs</label>
+      <label style="margin-top:6px;"><input type="checkbox" id="chkSuppressZeros"
+        title="Replace zero values with underscores in tensor display."/> Replace zeros with underscores</label>
+      <label style="margin-top:6px;">Tangent length: <span id="tangentLenVal">3.0</span></label>
+      <input type="range" id="tangentLenSlider" min="0.5" max="10" step="0.1" value="3.0"
+        title="Controls the length of the tangent handles that shape edge spline curves."/>
+      <label>Curvature: <span id="curvatureVal">0.00</span></label>
+      <input type="range" id="curvatureSlider" min="0" max="2" step="0.05" value="0"
+        title="Controls the curvature amount of edge spline curves."/>
+    </div>
+
+    <!-- Help -->
+    <div class="panel-section">
+      <h3>Help</h3>
+      <div class="controls-help" style="margin-bottom:6px;">
+        <b>Mouse controls:</b><br/>
+        <b>Left drag</b> on unselected node: move node<br/>
+        <b>Left drag</b> on selected node: move all selected nodes<br/>
+        <b>Ctrl+click</b> on node: toggle selection<br/>
+        <b>Ctrl+drag</b> on empty space: rectangle or lasso select<br/>
+        <b>Left drag</b> from index to index: create edge<br/>
+        <b>Right click</b> on index: menu<br/>
+        <b>Left drag</b> on empty space: pan<br/>
+        <b>Scroll wheel</b>: zoom in/out<br/>
+      </div>
+      <div class="controls-help">
+        <b>Other controls:</b><br/>
+        <b>Ctrl+A</b>: select all nodes<br/>
+        <b>Delete or Backspace</b>: delete selected nodes<br/>
+        <b>Browser Back/Forward</b>: undo/redo<br/>
+        <b>C</b>: contract selected node(s)<br/>
+        <b>F</b>: frame all nodes<br/>
+      </div>
+    </div>
+  </div>
+  <div id="resize-handle"></div>
+  <div id="canvas-container">
+    <canvas id="tnCanvas"></canvas>
+  </div>
+</div>
+<div id="tooltip" style="display:none;"></div>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/13.0.2/math.js"></script>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
+
