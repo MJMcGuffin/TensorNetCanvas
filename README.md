@@ -134,6 +134,9 @@ Above: a <a href="https://mjmcguffin.github.io/MuqcsCraft/?circuit={%22cols%22:[
 
 Below: the same circuit, after importing it into TensorNetCanvas.
 Notice that each control or anticontrol qubit in the original circuit is converted to an order-3 tensor.
+Contracting the entire network results in a single tensor that can be vectorized (flattened into a vector)
+to yield the output state vector of the original circuit.
+This shows how a tensor network can be used to simulate a quantum circuit.
 
 ![Example 4](/figures/circuit-import-TensorNetCanvas.png)
 
@@ -142,7 +145,7 @@ Notice that each control or anticontrol qubit in the original circuit is convert
 
 When TensorNetCanvas is running inside a web browser,
 the user can open a JavaScript console and call subroutines inside the code programmatically.
-The following lines of code can be pasted into the console; they illustrate how to create a few tensors and perform operations with them.
+The following lines of code can be pasted into the console, and illustrate how to create a few tensors and perform operations with them.
 
     // define two vectors and one matrix
     let v1 = CTensor.create([1,2,3]);
