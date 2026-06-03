@@ -63,11 +63,18 @@ and the trace of a matrix.
 Contractions, as implemented in TensorNetCanvas,
 are a generalization of
 the dot product of pairs of vectors,
-outer product of pairs of vectors,
-matrix product,
-trace,
+the outer product of pairs of vectors,
+the matrix product,
+the trace,
 partial trace,
 and tensor product.
+Contractions can be performed on a single tensor (causing self-edges to be contracted),
+or on two tensors,
+or on many tensors.
+In general, contracting a set of selected tensors
+will first cause each tensor to have any self-edges contracted,
+followed by binary contractions on any connected tensors,
+followed by tensor products on any remaining disconnected tensors.
 
 
 ## Mouse and keyboard controls
@@ -92,9 +99,12 @@ The lower left corner of the user interface contains a list of functions associa
 
 ## Companion Video
 
-A video demonstrating TensorNetCanvas's functionality:
+This video demonstrates TensorNetCanvas's functionality with several examples:
 
 <a href="https://youtu.be/MPuRhgFE7vU">View the video</a>
+
+The description of the video on youtube contains a table of contents with timestamps.
+
 
 
 ## Companion Paper
