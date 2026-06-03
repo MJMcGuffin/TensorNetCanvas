@@ -65,21 +65,21 @@ and the trace of a matrix.
 
 The lower left corner of the user interface contains a list of functions associated with mouse buttons and keyboard keys:
 
-    Mouse controls:
-    Left drag on unselected node: move node
-    Left drag on selected node: move all selected nodes
-    Ctrl+click on node: toggle selection
-    Ctrl+drag on empty space: rectangle or lasso select
-    Left drag from index to index: create edge
-    Right click on index: menu
-    Left drag on empty space: pan
-    Scroll wheel: zoom in/out
-    Other controls:
-    Ctrl+A: select all nodes
-    Delete or Backspace: delete selected nodes
-    Browser Back/Forward: undo/redo
-    C: contract selected node(s)
-    F: frame all nodes
+> Mouse controls:  
+> Left drag on unselected node: move node  
+> Left drag on selected node: move all selected nodes  
+> Ctrl+click on node: toggle selection  
+> Ctrl+drag on empty space: rectangle or lasso select  
+> Left drag from index to index: create edge  
+> Right click on index: menu  
+> Left drag on empty space: pan  
+> Scroll wheel: zoom in/out  
+> Other controls:  
+> Ctrl+A: select all nodes  
+> Delete or Backspace: delete selected nodes  
+> Browser Back/Forward: undo/redo  
+> C: contract selected node(s)  
+> F: frame all nodes
 
 ## Companion Video
 
