@@ -61,7 +61,25 @@ a product of three 2×2 matrices (yielding H Z H = X),
 and the trace of a matrix.
 
 
+## Mouse and keyboard controls
 
+The lower left corner of the user interface contains a list of functions associated with mouse buttons and keyboard keys:
+
+    Mouse controls:
+    Left drag on unselected node: move node
+    Left drag on selected node: move all selected nodes
+    Ctrl+click on node: toggle selection
+    Ctrl+drag on empty space: rectangle or lasso select
+    Left drag from index to index: create edge
+    Right click on index: menu
+    Left drag on empty space: pan
+    Scroll wheel: zoom in/out
+    Other controls:
+    Ctrl+A: select all nodes
+    Delete or Backspace: delete selected nodes
+    Browser Back/Forward: undo/redo
+    C: contract selected node(s)
+    F: frame all nodes
 
 ## Companion Video
 
@@ -104,8 +122,8 @@ Notice that each control or anticontrol qubit in the original circuit is convert
 ## Programmatic manipulation of tensors
 
 When TensorNetCanvas is running inside a web browser,
-and the user can open a JavaScript console and call subroutines inside the code programmatically.
-The following lines of code illustrate how to create a few tensors and perform operations with them.
+the user can open a JavaScript console and call subroutines inside the code programmatically.
+The following lines of code can be pasted into the console; they illustrate how to create a few tensors and perform operations with them.
 
     // define two vectors and one matrix
     let v1 = CTensor.create([1,2,3]);
