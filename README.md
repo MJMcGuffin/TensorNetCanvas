@@ -60,6 +60,15 @@ the outer product of two vectors,
 a product of three 2×2 matrices (yielding H Z H = X),
 and the trace of a matrix.
 
+Contractions, as implemented in TensorNetCanvas,
+are a generalization of
+the dot product of pairs of vectors,
+outer product of pairs of vectors,
+matrix product,
+trace,
+partial trace,
+and tensor product.
+
 
 ## Mouse and keyboard controls
 
